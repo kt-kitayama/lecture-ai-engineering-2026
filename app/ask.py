@@ -13,22 +13,28 @@
 import argparse
 
 from google import genai
-from google.genai import errors
+from google.genai import types, errors
 
 from app.config import MODEL, api_error_message, get_api_key
+
+from typing import Any
 
 # 講座に固有の質問。正しい答えは data/glossary.json の homework-levels にある
 DEFAULT_QUESTION = "AIE2026の講座の宿題にある「3レベル」とは何ですか？"
 
 
-def ask(question: str) -> str:
+def ask(question: str, temperature: float = 0.0) -> tuple[str, Any]:
     client = genai.Client(api_key=get_api_key())
     response = client.models.generate_content(model=MODEL, contents=question)
 
     # TODO(第1回 演習): response.usage_metadata から
     #   入力トークン数と出力トークン数を表示してみよう（Copilotに頼んでよい）
 
-    return response.text
+    # temperature を設定
+    config = types.GenerateContentConfig(temperature = temperature)
+    response = client.models.generate_content(model=MODEL, contents=question, config=config)
+
+    return (response.text, response.usage_metadata)
 
 
 def main() -> None:
@@ -39,7 +45,12 @@ def main() -> None:
     print(f"[model] {MODEL}")
     print(f"[質問] {args.question}\n")
     try:
-        print(ask(args.question))
+        # print(ask(args.question))
+        text, usage =ask(args.question)
+
+        print(text)
+        print(f"\n[Tokens] 入力: {usage.prompt_token_count}, 出力: {usage.candidates_token_count}")
+
     except errors.APIError as e:
         print(api_error_message(e.code, e.message))
         raise SystemExit(1)
