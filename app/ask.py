@@ -23,9 +23,9 @@ from typing import Any
 DEFAULT_QUESTION = "AIE2026の講座の宿題にある「3レベル」とは何ですか？"
 
 
-def ask(question: str, temperature: float = 0.0) -> tuple[str, Any]:
+def ask(question: str, temperature: float = 0.0) -> tuple[str, Any, Any]:
     client = genai.Client(api_key=get_api_key())
-    response = client.models.generate_content(model=MODEL, contents=question)
+    # response = client.models.generate_content(model=MODEL, contents=question)
 
     # TODO(第1回 演習): response.usage_metadata から
     #   入力トークン数と出力トークン数を表示してみよう（Copilotに頼んでよい）
@@ -34,7 +34,7 @@ def ask(question: str, temperature: float = 0.0) -> tuple[str, Any]:
     config = types.GenerateContentConfig(temperature = temperature)
     response = client.models.generate_content(model=MODEL, contents=question, config=config)
 
-    return (response.text, response.usage_metadata)
+    return (response.text, response.usage_metadata, config)
 
 
 def main() -> None:
@@ -46,10 +46,10 @@ def main() -> None:
     print(f"[質問] {args.question}\n")
     try:
         # print(ask(args.question))
-        text, usage =ask(args.question)
+        text, usage, config = ask(args.question)
 
         print(text)
-        print(f"\n[Tokens] 入力: {usage.prompt_token_count}, 出力: {usage.candidates_token_count}")
+        print(f"\n[Temperature]{config.temperature} [Tokens] 入力: {usage.prompt_token_count}, 出力: {usage.candidates_token_count}")
 
     except errors.APIError as e:
         print(api_error_message(e.code, e.message))
